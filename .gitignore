@@ -1,0 +1,13 @@
+# Frontend dependencies and build output
+Frontend/node_modules/
+Frontend/dist/
+
+# .NET build and Visual Studio files
+Backend/**/bin/
+Backend/**/obj/
+.vs/
+
+# Local secrets
+.env
+.env.*
+appsettings.Development.json

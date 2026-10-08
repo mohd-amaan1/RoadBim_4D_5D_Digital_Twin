@@ -1,0 +1,495 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   RoadBIM design tokens
+
+   The previous look leaned on heavy glassmorphism — 20px blur, 50px shadows and
+   coloured glow on everything. It reads dated and, more practically, the glow
+   competed with the status colours that actually carry meaning here.
+
+   This layer replaces it with layered opaque surfaces and hairline borders, so
+   depth comes from value steps rather than blur, and colour is reserved for
+   state: green built, amber in progress, red delayed, cyan interactive.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* ground and surfaces, each a deliberate step lighter than the last */
+  --bg: #090C12;
+  --surface-1: #10141C;   /* panels sitting on the ground */
+  --surface-2: #161B25;   /* raised blocks inside a panel */
+  --surface-3: #1C222E;   /* controls: inputs, buttons, chips */
+  --surface-4: #242B39;   /* hover on a control */
+
+  /* hairlines rather than borders — visible, never heavy */
+  --line: rgba(148, 163, 184, 0.10);
+  --line-strong: rgba(148, 163, 184, 0.20);
+
+  --text: #E9EEF6;
+  --text-muted: #97A3B6;
+  --text-faint: #64748B;
+
+  /* one accent, used for interaction only */
+  --accent: #22D3EE;
+  --accent-ink: #062A33;
+  --accent-soft: rgba(34, 211, 238, 0.12);
+  --accent-line: rgba(34, 211, 238, 0.35);
+
+  /* semantic, matching the 3D tint and the plan map */
+  --ok: #6EE7A8;
+  --active: #FBBF4A;
+  --late: #F87171;
+  --idle: #94A3B8;
+  --violet: #A78BFA;
+
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  /* elevation as a soft ambient shadow, not a coloured halo */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 24px -8px rgba(0, 0, 0, 0.65);
+  --shadow-3: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+}
+
+/*
+ * GLOBAL UI SCALE
+ * The dashboard was authored against a ~1600px+ viewport. On a 1920x1080 screen with
+ * Windows display scaling at 125-150% the real CSS viewport is only ~1280-1536px, so
+ * everything overflowed and read as oversized at 100% browser zoom.
+ *
+ * Tailwind's spacing/typography scales are all rem-based, so scaling the root font size
+ * shrinks type, padding, gaps and the sidebar together and keeps the design proportional.
+ *   1280px -> 13.0px   1440px -> 13.9px   1600px -> 14.8px   >=1820px -> 16px (unchanged)
+ */
+html {
+  font-size: clamp(13px, 0.55vw + 6px, 16px);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* A faint corner wash keeps a full-bleed dark page from reading as a flat void */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(70rem 40rem at 12% -8%, rgba(34, 211, 238, 0.055), transparent 60%),
+    radial-gradient(60rem 36rem at 96% 4%, rgba(167, 139, 250, 0.045), transparent 62%);
+}
+
+#root { position: relative; z-index: 1; }
+
+h1, h2, h3, h4 { text-wrap: balance; }
+
+/* ==========================================================================
+   Surfaces
+   `.glass-panel` and `.glass-card` keep their names because they are used across
+   every screen; redefining them here is what re-skins the whole app at once.
+   ========================================================================== */
+
+.glass-panel {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.glass-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.glass-card-hover {
+  transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-line);
+  background: var(--surface-3);
+}
+
+/* Glow utilities are kept as no-ops: the old classes are scattered through the
+   dashboard, and a soft top highlight reads better than a coloured halo. */
+.glow-cyan, .glow-emerald, .glow-amber, .glow-rose {
+  box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+
+.hairline { border-color: var(--line); }
+
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .18rem .5rem;
+  border-radius: 7px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: .6875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.ui-chip[data-tone='accent'] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+.ui-chip[data-tone='ok']     { color: var(--ok);     background: rgba(110, 231, 168, .12); border-color: rgba(110, 231, 168, .3); }
+.ui-chip[data-tone='active'] { color: var(--active); background: rgba(251, 191, 74, .12);  border-color: rgba(251, 191, 74, .3); }
+.ui-chip[data-tone='late']   { color: var(--late);   background: rgba(248, 113, 113, .12); border-color: rgba(248, 113, 113, .3); }
+.ui-chip[data-tone='violet'] { color: var(--violet); background: rgba(167, 139, 250, .12); border-color: rgba(167, 139, 250, .3); }
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  padding: .5rem .9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: .8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.ui-btn:hover:not(:disabled) { background: var(--surface-4); border-color: var(--line-strong); }
+.ui-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.ui-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.ui-btn-primary:hover:not(:disabled) { background: #67E8F9; border-color: #67E8F9; }
+
+.ui-btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+.ui-btn-ghost:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+
+.ui-input,
+.ui-select {
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: .55rem .7rem;
+  color: var(--text);
+  font-size: .8125rem;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.ui-input:focus,
+.ui-select:focus {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.ui-label {
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Drop zones ------------------------------------------------------------- */
+
+.ui-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 2rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1.5px dashed var(--line-strong);
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+.ui-drop:hover { border-color: var(--accent-line); background: var(--surface-3); }
+.ui-drop[data-active='true'] { border-color: var(--accent); background: var(--accent-soft); }
+.ui-drop[data-filled='true'] { border-style: solid; border-color: rgba(110, 231, 168, .35); background: rgba(110, 231, 168, .05); }
+
+/* Slot card in the workbook step ----------------------------------------- */
+
+.ui-slot {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .85rem .9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+.ui-slot[data-state='filled']  { border-color: rgba(110, 231, 168, .35); background: rgba(110, 231, 168, .05); }
+.ui-slot[data-state='missing'] { border-color: rgba(248, 113, 113, .35); background: rgba(248, 113, 113, .05); }
+
+/* Switch ------------------------------------------------------------------ */
+/* A real control (<button role="switch">), so it is keyboard-operable and announces its
+   state; the track and thumb are decoration drawn from the same surface tokens. */
+
+.ui-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+}
+.ui-switch-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.1rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+  transition: background .15s, border-color .15s;
+}
+.ui-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: .15rem;
+  width: .8rem;
+  height: .8rem;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transform: translateY(-50%);
+  transition: left .15s, background .15s;
+}
+.ui-switch[aria-checked='true'] { color: var(--text); }
+.ui-switch[aria-checked='true'] .ui-switch-track { background: var(--accent-soft); border-color: var(--accent-line); }
+.ui-switch[aria-checked='true'] .ui-switch-track::after { left: calc(100% - .95rem); background: var(--accent); }
+.ui-switch:focus-visible .ui-switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ui-switch:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Stepper ---------------------------------------------------------------- */
+
+.ui-step {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .45rem .2rem;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: .8125rem;
+  font-weight: 700;
+  transition: color .15s ease;
+}
+
+.ui-step:disabled { cursor: not-allowed; opacity: .5; }
+.ui-step:hover:not(:disabled) { color: var(--text-muted); }
+.ui-step[data-state='current'] { color: var(--text); }
+.ui-step[data-state='done'] { color: var(--ok); }
+
+.ui-step-dot {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: .6875rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ui-step[data-state='current'] .ui-step-dot {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ui-step-rail {
+  flex: 1;
+  height: 1px;
+  min-width: 1rem;
+  background: var(--line-strong);
+}
+
+/* Meters ----------------------------------------------------------------- */
+
+.ui-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.ui-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width .5s cubic-bezier(.16, 1, .3, 1);
+}
+
+/* ==========================================================================
+   Layout helpers kept from before
+   ========================================================================== */
+
+.viewport-panel { height: clamp(20rem, 60vh, 42rem); }
+.chat-panel { height: clamp(20rem, 68vh, 34rem); }
+
+/*
+ * Fullscreen viewport (3D BIM / IFC viewer).
+ * The UA `:fullscreen { width/height: 100% }` rule loses to the panel's own height class,
+ * so the size has to be re-asserted here — class + pseudo-class outranks a single class.
+ */
+.bim-viewport:fullscreen,
+.bim-viewport:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
+  border-radius: 0;
+}
+
+/*
+ * 0-100 KM chainage heatmap.
+ * Tailwind has no grid-cols-20/25/50 (the scale stops at 12), so the previous classes were
+ * inert and the grid silently collapsed to 10 columns / 10 very tall rows.
+ */
+.km-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+@media (min-width: 640px) { .km-heatmap-grid { grid-template-columns: repeat(20, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .km-heatmap-grid { grid-template-columns: repeat(25, minmax(0, 1fr)); } }
+
+/* Chainage labels on the corridor maps (Leaflet tooltips) */
+.ifc-map-chip {
+  background: rgba(9, 12, 18, 0.94) !important;
+  border: 1px solid var(--accent-line) !important;
+  color: #D7F5FD !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 7px !important;
+  box-shadow: var(--shadow-2) !important;
+}
+
+.ifc-map-chip::before { display: none !important; }
+
+/* Leaflet stacks its own furniture high — panes at 400, zoom and attribution controls at
+   1000 — and none of its ancestors here create a stacking context, so those numbers land
+   in the page's root context and compete with the app's own layers. That is how a map
+   ends up drawn over a modal that sits above it in the markup.
+
+   `isolation: isolate` makes the map its own stacking context: Leaflet's internal order is
+   untouched, but the whole map now participates in the page as a single element at its
+   container's level. Raising every dialog to out-shout 1000 would have been a race that
+   the next widget with an opinion about z-index wins. */
+.leaflet-container { isolation: isolate; }
+
+/* One layer for anything that covers the page. Named rather than a bare number so a new
+   dialog does not have to guess what it must beat. */
+.ui-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+/* Leaflet popups, so they belong to this UI rather than the default white box */
+.leaflet-popup-content-wrapper {
+  background: var(--surface-1) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-3) !important;
+}
+.leaflet-popup-tip { background: var(--surface-1) !important; border: 1px solid var(--line-strong) !important; }
+.leaflet-popup-content { margin: .8rem .9rem !important; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--text-faint) !important; }
+.leaflet-container a.leaflet-popup-close-button:hover { color: var(--text) !important; }
+.leaflet-bar a { background: var(--surface-2) !important; color: var(--text) !important; border-color: var(--line-strong) !important; }
+.leaflet-bar a:hover { background: var(--surface-3) !important; }
+.leaflet-control-attribution { background: rgba(9, 12, 18, .75) !important; color: var(--text-faint) !important; }
+.leaflet-control-attribution a { color: var(--text-muted) !important; }
+
+/* ==========================================================================
+   Scrollbars, motion
+   ========================================================================== */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #3A4456; background-clip: content-box; }
+
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--surface-4) transparent; }
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up { animation: slideInUp .35s cubic-bezier(.16, 1, .3, 1) forwards; }
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-in { animation: scaleIn .2s cubic-bezier(.16, 1, .3, 1) forwards; }
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+
+.animate-pulse-glow { animation: pulseGlow 2.6s infinite ease-in-out; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
